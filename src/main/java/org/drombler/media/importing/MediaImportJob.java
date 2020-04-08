@@ -8,7 +8,7 @@ package org.drombler.media.importing;
 import java.io.IOException;
 import java.nio.file.Path;
 import org.drombler.identity.core.DromblerId;
-import org.drombler.media.core.AbstractMediaOrganizer;
+import org.drombler.media.importing.core.AbstractMediaOrganizer;
 
 /**
  *

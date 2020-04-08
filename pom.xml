@@ -29,6 +29,11 @@
     
     <dependencies>
         <dependency>
+            <groupId>org.drombler.media</groupId>
+            <artifactId>drombler-media-core</artifactId>
+            <version>0.1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>

@@ -15,8 +15,6 @@ import java.util.logging.Logger;
 import org.drombler.identity.core.DromblerId;
 import org.drombler.identity.core.DromblerUserId;
 import org.drombler.media.importing.iphone.IPhoneMobileMediaOrganizer;
-import org.drombler.media.importing.samsung.galaxy.SamsungMobileMediaOrganizer;
-import org.drombler.media.importing.samsung.galaxy.ThreemaMediaOrganizer;
 
 /**
  *

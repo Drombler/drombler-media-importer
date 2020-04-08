@@ -5,7 +5,6 @@
  */
 package org.drombler.media.importing.samsung.galaxy;
 
-import org.drombler.media.core.AbstractMediaOrganizer;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -17,6 +16,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.drombler.identity.core.DromblerId;
 import org.drombler.identity.core.DromblerUserId;
+import org.drombler.media.importing.core.AbstractMediaOrganizer;
 
 /**
  * Organizes Files from Panasonic import for Synology import.

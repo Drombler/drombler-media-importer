@@ -1,4 +1,4 @@
-package org.drombler.event.management;
+package org.drombler.media.importing;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -20,7 +20,6 @@ import java.util.stream.Stream;
 import org.drombler.event.core.Event;
 import org.drombler.event.core.EventDuration;
 import org.drombler.event.core.FullTimeEventDuration;
-import org.drombler.media.importing.ImportEventDurationComparator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
