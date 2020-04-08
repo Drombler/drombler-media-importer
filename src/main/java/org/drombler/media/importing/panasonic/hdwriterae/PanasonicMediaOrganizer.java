@@ -26,18 +26,17 @@ public class PanasonicMediaOrganizer extends AbstractMediaOrganizer {
     public static void main(String[] args) throws IOException {
         initLogger();
         
-        Path baseDirPath = Paths.get("D:\\hd-writer-ae-tmp");
-        DromblerId defaultDromblerId = new DromblerUserId("puce");
+        Path mediaRootDir = Paths.get("D:\\hd-writer-ae-tmp");
 
-        PanasonicMediaOrganizer organizer = new PanasonicMediaOrganizer();
-        organizer.organize(baseDirPath, defaultDromblerId);
+        PanasonicMediaOrganizer organizer = new PanasonicMediaOrganizer(mediaRootDir);
+        organizer.organize();
     }
 
     private static final Pattern RAW_DATE_PATTERN = Pattern.compile("\\d{2}-\\d{2}-\\d{4}");
     private static final DateTimeFormatter RAW_DATE_FORMATTER = DateTimeFormatter.ofPattern("MM-dd-yyyy");
 
-    public PanasonicMediaOrganizer() throws IOException {
-        super(RAW_DATE_PATTERN, true);
+    public PanasonicMediaOrganizer(Path mediaRootDir) throws IOException {
+        super(mediaRootDir, RAW_DATE_PATTERN, true);
     }
 
     @Override

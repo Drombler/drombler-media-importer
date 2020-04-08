@@ -12,8 +12,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.drombler.identity.core.DromblerId;
-import org.drombler.identity.core.DromblerUserId;
 import org.drombler.media.importing.iphone.IPhoneMobileMediaOrganizer;
 
 /**
@@ -34,15 +32,12 @@ public class MediaImporter {
     }
 
     private static List<MediaImportJob> createPuceMediaImportJobs() throws IOException {
-        Path puceMobileDirPath = Paths.get("\\\\diskstation\\photo\\Puce-Mobile");
-        DromblerId puceDromblerId = new DromblerUserId("puce");
-
-        DromblerId defaultDromblerId = new DromblerUserId("unknown");
+        Path iPhoneMediaRootDir = Paths.get("\\\\diskstation\\photo\\Puce-Mobile");
 
         return Arrays.asList(
 //                new MediaImportJob(puceMobileDirPath, puceDromblerId, new SamsungMobileMediaOrganizer(mediaEventDirPathsFilePath)),
 //                new MediaImportJob(puceMobileDirPath, defaultDromblerId, new ThreemaMediaOrganizer(mediaEventDirPathsFilePath)),
-                new MediaImportJob(puceMobileDirPath, puceDromblerId, new IPhoneMobileMediaOrganizer())
+                new MediaImportJob(new IPhoneMobileMediaOrganizer(iPhoneMediaRootDir))
         );
 
     }

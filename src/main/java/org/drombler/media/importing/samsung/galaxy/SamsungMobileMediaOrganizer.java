@@ -26,19 +26,17 @@ public class SamsungMobileMediaOrganizer extends AbstractMediaOrganizer {
     public static void main(String[] args) throws IOException {
         initLogger();
 
-        Path baseDirPath = Paths.get("\\\\diskstation\\photo\\Puce-Mobile");
+        Path mediaRootDir = Paths.get("\\\\diskstation\\photo\\Puce-Mobile");
 
-        DromblerId defaultDromblerId = new DromblerUserId("puce");
-
-        SamsungMobileMediaOrganizer organizer = new SamsungMobileMediaOrganizer();
-        organizer.organize(baseDirPath, defaultDromblerId);
+        SamsungMobileMediaOrganizer organizer = new SamsungMobileMediaOrganizer(mediaRootDir);
+        organizer.organize();
     }
 
     private static final Pattern RAW_DATE_PATTERN = Pattern.compile("(\\d{8}_\\d{6})\\..*");
     private static final DateTimeFormatter RAW_DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
 
-    public SamsungMobileMediaOrganizer() throws IOException {
-        super(RAW_DATE_PATTERN, false);
+    public SamsungMobileMediaOrganizer(Path mediaRootDir) throws IOException {
+        super(mediaRootDir, RAW_DATE_PATTERN, false);
     }
 
     @Override
