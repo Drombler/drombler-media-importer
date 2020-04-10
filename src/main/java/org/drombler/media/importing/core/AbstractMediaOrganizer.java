@@ -26,6 +26,7 @@ import org.drombler.media.core.video.VideoStorage;
 import org.drombler.media.importing.EventManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.softsmithy.lib.text.FormatException;
 
 /**
  *
@@ -57,7 +58,7 @@ public abstract class AbstractMediaOrganizer {
         this.directories = directories;
 
         Properties mediaImportingProperties = new Properties();
-        try (InputStream is = AbstractMediaOrganizer.class.getResourceAsStream("media-importing.properties")) {
+        try ( InputStream is = AbstractMediaOrganizer.class.getResourceAsStream("media-importing.properties")) {
             mediaImportingProperties.load(is);
         }
         this.mediaRootDir = mediaRootDir;
@@ -68,7 +69,7 @@ public abstract class AbstractMediaOrganizer {
 
         this.defaulCopyrightOwner = new DromblerUserId(mediaImportingProperties.getProperty("defaultCopyrightOwner"));
         dromblerIdentityProviderManager.registerDromblerIdentityProvider(PrivateDromblerIdProvider.getInstance());
-        
+
         eventManager = new EventManager(dromblerIdentityProviderManager);
         eventManager.updateEventMap(photoStorage);
         eventManager.updateEventMap(videoStorage);
@@ -123,7 +124,7 @@ public abstract class AbstractMediaOrganizer {
                     paths.forEach(filePath -> {
                         try {
                             moveFile(filePath, Files.size(filePath) < 1000000);
-                        } catch (IOException ex) {
+                        } catch (IOException | FormatException ex) {
                             LOGGER.error("Error during moving file!", ex);
                         }
                     });
@@ -134,16 +135,16 @@ public abstract class AbstractMediaOrganizer {
             } else {
                 moveFile(path, false);
             }
-        } catch (IOException ex) {
+        } catch (IOException | FormatException ex) {
             LOGGER.error("Error during moving file!", ex);
         }
     }
 
-    private void moveFile(Path filePath, boolean uncategorized) throws IOException {
+    private void moveFile(Path filePath, boolean uncategorized) throws IOException, FormatException {
         Event event = getFirstEvent(directories ? filePath.getParent() : filePath);
-        Path photoDir = photoStorage.getMediaEventDirPath(event, defaulCopyrightOwner, uncategorized);
+        Path photoDir = photoStorage.resolveMediaEventDirPath(event, defaulCopyrightOwner, uncategorized);
 //        System.out.println("dst: "+photoDir);
-        Path videoDir = videoStorage.getMediaEventDirPath(event, defaulCopyrightOwner, uncategorized);
+        Path videoDir = videoStorage.resolveMediaEventDirPath(event, defaulCopyrightOwner, uncategorized);
 //        System.out.println("dst: "+videoDir);
         LOGGER.debug("src: " + filePath);
         try {

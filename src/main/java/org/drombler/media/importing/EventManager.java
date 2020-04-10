@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import org.drombler.event.core.Event;
 import org.drombler.event.core.EventDuration;
 import org.drombler.event.core.FullTimeEventDuration;
+import org.drombler.event.core.format.EventDirNameFormatter;
 import org.drombler.identity.core.DromblerIdentityProviderManager;
 import org.drombler.media.core.MediaSource;
 import org.drombler.media.core.MediaStorage;
@@ -24,6 +25,7 @@ import org.drombler.media.core.photo.PhotoStorage;
 import org.drombler.media.core.video.VideoStorage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.softsmithy.lib.text.FormatException;
 
 /**
  *
@@ -45,7 +47,7 @@ public class EventManager {
         mediaStorageProperties.stringPropertyNames().stream()
                 .map(name -> new PhotoStorage(name, Paths.get(mediaStorageProperties.getProperty(name))))
                 .forEach(photoStorage -> updateEventMap(photoStorage));
-        
+
         Properties videoStorageProperties = loadMediaStorageProperties("video-storages.properties");
         videoStorageProperties.stringPropertyNames().stream()
                 .map(name -> new VideoStorage(name, Paths.get(videoStorageProperties.getProperty(name))))
@@ -54,18 +56,19 @@ public class EventManager {
 
     private Properties loadMediaStorageProperties(final String mediaStoragesPropertiesFile) throws IOException {
         Properties mediaStorageProperties = new Properties();
-        try (InputStream is = EventManager.class.getResourceAsStream(mediaStoragesPropertiesFile)) {
+        try ( InputStream is = EventManager.class.getResourceAsStream(mediaStoragesPropertiesFile)) {
             mediaStorageProperties.load(is);
         }
         return mediaStorageProperties;
     }
 
     public <M extends MediaSource<M>> void updateEventMap(MediaStorage<M> mediaStorage) {
-        try  {
+        try {
             List<M> mediaSources = mediaStorage.readMediaSources(dromblerIdentityProviderManager);
             mediaSources.stream()
                     .map(MediaSource::getEvent)
                     .filter(Objects::nonNull)
+                    .filter(event -> event.getDuration() instanceof FullTimeEventDuration)
                     .forEach(this::updateEventMap);
         } catch (IOException ex) {
             LOG.error(ex.getMessage(), ex);
@@ -80,8 +83,19 @@ public class EventManager {
             }
             if (!events.get(date).contains(event)) {
                 events.get(date).add(event);
-                LOG.debug(event.getName() + " - " + event.getDirName());
+                String eventDirName = getFormattedEventDirName(event);
+                LOG.debug(event.getName() + " - " + eventDirName);
             }
+        }
+    }
+
+    private String getFormattedEventDirName(Event event) {
+        try {
+            EventDirNameFormatter formatter = new EventDirNameFormatter();
+            return formatter.format(event);
+        } catch (FormatException ex) {
+            LOG.error(ex.getMessage(), ex);
+            return null;
         }
     }
 
