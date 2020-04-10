@@ -5,7 +5,6 @@
  */
 package org.drombler.media.importing.samsung.galaxy;
 
-import org.drombler.media.core.AbstractMediaOrganizer;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -15,6 +14,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.drombler.identity.core.DromblerId;
 import org.drombler.identity.core.DromblerUserId;
+import org.drombler.media.importing.core.AbstractMediaOrganizer;
 
 /**
  * Organizes Files from Panasonic import for Synology import.
@@ -26,19 +26,17 @@ public class SamsungMobileMediaOrganizer extends AbstractMediaOrganizer {
     public static void main(String[] args) throws IOException {
         initLogger();
 
-        Path baseDirPath = Paths.get("\\\\diskstation\\photo\\Puce-Mobile");
+        Path mediaRootDir = Paths.get("\\\\diskstation\\photo\\Puce-Mobile");
 
-        DromblerId defaultDromblerId = new DromblerUserId("puce");
-
-        SamsungMobileMediaOrganizer organizer = new SamsungMobileMediaOrganizer();
-        organizer.organize(baseDirPath, defaultDromblerId);
+        SamsungMobileMediaOrganizer organizer = new SamsungMobileMediaOrganizer(mediaRootDir);
+        organizer.organize();
     }
 
     private static final Pattern RAW_DATE_PATTERN = Pattern.compile("(\\d{8}_\\d{6})\\..*");
     private static final DateTimeFormatter RAW_DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
 
-    public SamsungMobileMediaOrganizer() throws IOException {
-        super(RAW_DATE_PATTERN, false);
+    public SamsungMobileMediaOrganizer(Path mediaRootDir) throws IOException {
+        super(mediaRootDir, RAW_DATE_PATTERN, false);
     }
 
     @Override

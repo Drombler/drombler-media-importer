@@ -5,7 +5,6 @@
  */
 package org.drombler.media.importing.threema;
 
-import org.drombler.media.core.AbstractMediaOrganizer;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -17,6 +16,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.drombler.identity.core.DromblerId;
 import org.drombler.identity.core.DromblerUserId;
+import org.drombler.media.importing.core.AbstractMediaOrganizer;
 
 /**
  * Organizes Files from Panasonic import for Synology import.
@@ -30,15 +30,14 @@ public class ThreemaMediaOrganizer extends AbstractMediaOrganizer {
     public static void main(String[] args) throws IOException {
         initLogger();
 
-        Path baseDirPath = Paths.get("\\\\diskstation\\photo\\Puce-Mobile");
-        DromblerId defaultDromblerId = new DromblerUserId("unknown");
+        Path mediaRootDir = Paths.get("\\\\diskstation\\photo\\Puce-Mobile");
 
-        ThreemaMediaOrganizer organizer = new ThreemaMediaOrganizer();
-        organizer.organize(baseDirPath, defaultDromblerId);
+        ThreemaMediaOrganizer organizer = new ThreemaMediaOrganizer(mediaRootDir);
+        organizer.organize();
     }
 
-    public ThreemaMediaOrganizer() throws IOException {
-        super(RAW_DATE_PATTERN, false);
+    public ThreemaMediaOrganizer(Path mediaRootDir) throws IOException {
+        super(mediaRootDir, RAW_DATE_PATTERN, false);
     }
 
     @Override

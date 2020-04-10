@@ -8,7 +8,7 @@ package org.drombler.media.importing;
 import java.io.IOException;
 import java.nio.file.Path;
 import org.drombler.identity.core.DromblerId;
-import org.drombler.media.core.AbstractMediaOrganizer;
+import org.drombler.media.importing.core.AbstractMediaOrganizer;
 
 /**
  *
@@ -16,28 +16,10 @@ import org.drombler.media.core.AbstractMediaOrganizer;
  */
 public class MediaImportJob {
 
-    private final Path baseDirPath;
-    private final DromblerId defaultDromblerId;
     private final AbstractMediaOrganizer mediaOrganizer;
 
-    public MediaImportJob(Path baseDirPath, DromblerId defaultDromblerId, AbstractMediaOrganizer mediaOrganizer) {
-        this.baseDirPath = baseDirPath;
-        this.defaultDromblerId = defaultDromblerId;
+    public MediaImportJob(AbstractMediaOrganizer mediaOrganizer) {
         this.mediaOrganizer = mediaOrganizer;
-    }
-
-    /**
-     * @return the baseDirPath
-     */
-    public Path getBaseDirPath() {
-        return baseDirPath;
-    }
-
-    /**
-     * @return the defaultDromblerId
-     */
-    public DromblerId getDefaultDromblerId() {
-        return defaultDromblerId;
     }
 
     /**
@@ -48,7 +30,7 @@ public class MediaImportJob {
     }
 
     public void run() throws IOException {
-        mediaOrganizer.organize(baseDirPath, defaultDromblerId);
+        mediaOrganizer.organize();
     }
 
 }
