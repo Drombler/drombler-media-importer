@@ -1,0 +1,32 @@
+{
+    "mediaStorageConfigurations": [
+        {
+            "id": "albums-shared",
+            "name": "Alben",
+            "mediaRootDir": "\\\\diskstation\\photo\\Alben",
+            "private": false,
+            "supportedMediaCategoryIds": ["photo"]
+        },
+        {
+            "id": "albums-others",
+            "name": "Alben (andere)",
+            "mediaRootDir": "\\\\diskstation\\photo\\Alben-others",
+            "private": false,
+            "supportedMediaCategoryIds": ["photo"]
+        },
+        {
+            "id": "albums-private",
+            "name": "Alben (privat)",
+            "mediaRootDir": "\\\\diskstation\\home\\photo\\Alben",
+            "private": true,
+            "supportedMediaCategoryIds": ["photo", "image"]
+        },
+        {
+            "id": "privatvideo",
+            "name": "Prviat Video",
+            "mediaRootDir": "\\\\diskstation\\video\\privatvideo",
+            "private": false,
+            "supportedMediaCategoryIds": ["video"]
+        }
+    ]
+}
