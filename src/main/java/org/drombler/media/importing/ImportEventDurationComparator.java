@@ -6,8 +6,8 @@
 package org.drombler.media.importing;
 
 import java.util.Comparator;
+import org.drombler.event.core.AllDayEventDuration;
 import org.drombler.event.core.EventDuration;
-import org.drombler.event.core.FullTimeEventDuration;
 
 /**
  *
@@ -19,26 +19,26 @@ public class ImportEventDurationComparator implements Comparator<EventDuration> 
     private static final int GREATER = 1;
     private static final int EQUAL = 0;
 
-    private final Comparator<FullTimeEventDuration> fullTimeEventDurationComparator
-            = Comparator.comparing(FullTimeEventDuration::getStartDateInclusive)
-                    .thenComparing(FullTimeEventDuration::getEndDateInclusive);
+    private final Comparator<AllDayEventDuration> allDayEventDurationComparator
+            = Comparator.comparing(AllDayEventDuration::getStartDateInclusive)
+                    .thenComparing(AllDayEventDuration::getEndDateInclusive);
 
     @Override
     public int compare(EventDuration ed1, EventDuration ed2) {
-        if (!isFullTimeEventDuration(ed1) && isFullTimeEventDuration(ed2)) {
+        if (!isAllDayEventDuration(ed1) && isAllDayEventDuration(ed2)) {
             return LESS;
-        } else if (isFullTimeEventDuration(ed1) && !isFullTimeEventDuration(ed2)) {
+        } else if (isAllDayEventDuration(ed1) && !isAllDayEventDuration(ed2)) {
             return GREATER;
-        } else if (isFullTimeEventDuration(ed1) && isFullTimeEventDuration(ed2)) {
-            return fullTimeEventDurationComparator.compare((FullTimeEventDuration) ed1,
-                    (FullTimeEventDuration) ed2);
+        } else if (isAllDayEventDuration(ed1) && isAllDayEventDuration(ed2)) {
+            return allDayEventDurationComparator.compare((AllDayEventDuration) ed1,
+                    (AllDayEventDuration) ed2);
         } else {
             return EQUAL;
         }
     }
 
-    private static boolean isFullTimeEventDuration(EventDuration eventDuration) {
-        return eventDuration instanceof FullTimeEventDuration;
+    private static boolean isAllDayEventDuration(EventDuration eventDuration) {
+        return eventDuration instanceof AllDayEventDuration;
     }
 
 }

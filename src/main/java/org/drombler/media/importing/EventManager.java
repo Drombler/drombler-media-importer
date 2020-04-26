@@ -13,7 +13,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import org.drombler.event.core.Event;
 import org.drombler.event.core.EventDuration;
-import org.drombler.event.core.FullTimeEventDuration;
+import org.drombler.event.core.AllDayEventDuration;
 import org.drombler.event.core.format.EventDirNameFormatter;
 import org.drombler.identity.management.DromblerIdentityProviderManager;
 import org.drombler.media.core.MediaSource;
@@ -46,7 +46,7 @@ public class EventManager {
             mediaSources.stream()
                     .map(MediaSource::getEvent)
                     .filter(Objects::nonNull)
-                    .filter(event -> event.getDuration() instanceof FullTimeEventDuration)
+                    .filter(event -> event.getDuration() instanceof AllDayEventDuration)
                     .forEach(this::updateEventMap);
         } catch (IOException ex) {
             LOG.error(ex.getMessage(), ex);
@@ -54,7 +54,7 @@ public class EventManager {
     }
 
     private void updateEventMap(Event event) {
-        final FullTimeEventDuration duration = (FullTimeEventDuration) event.getDuration();
+        final AllDayEventDuration duration = (AllDayEventDuration) event.getDuration();
         for (LocalDate date = duration.getStartDateInclusive(); date.isBefore(duration.getEndDateInclusive()) || date.equals(duration.getEndDateInclusive()); date = date.plusDays(1)) {
             if (!events.containsKey(date)) {
                 events.put(date, new TreeSet<>(eventComparator));
@@ -83,7 +83,7 @@ public class EventManager {
     }
 
     private Event createEvent(LocalDate date) {
-        return new Event(null, "", new FullTimeEventDuration(date, date));
+        return new Event(null, "", new AllDayEventDuration(date, date));
     }
 
     public SortedSet<Event> getAllEvents() {
