@@ -9,7 +9,7 @@
     </parent>
     <groupId>org.drombler.media</groupId>
     <artifactId>drombler-media-importer</artifactId>
-    <version>0.1-SNAPSHOT</version>
+    <version>0.1.0-SNAPSHOT</version>
     <packaging>bundle</packaging>
     
     <!-- Not inherited!?? -->
@@ -31,7 +31,7 @@
         <dependency>
             <groupId>org.drombler.media</groupId>
             <artifactId>drombler-media-core</artifactId>
-            <version>0.1-SNAPSHOT</version>
+            <version>0.1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
