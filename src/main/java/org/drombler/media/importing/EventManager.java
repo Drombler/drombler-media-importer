@@ -1,19 +1,8 @@
 package org.drombler.media.importing;
 
-import java.io.IOException;
-import java.time.LocalDate;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
+import org.drombler.event.core.AllDayEventDuration;
 import org.drombler.event.core.Event;
 import org.drombler.event.core.EventDuration;
-import org.drombler.event.core.AllDayEventDuration;
 import org.drombler.event.core.format.EventDirNameFormatter;
 import org.drombler.identity.management.DromblerIdentityProviderManager;
 import org.drombler.media.core.MediaSource;
@@ -22,8 +11,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.softsmithy.lib.text.FormatException;
 
+import java.io.IOException;
+import java.time.LocalDate;
+import java.util.*;
+import java.util.stream.Collectors;
+
 /**
- *
  * @author Florian
  */
 public class EventManager {
@@ -83,7 +76,10 @@ public class EventManager {
     }
 
     private Event createEvent(LocalDate date) {
-        return new Event(null, "", new AllDayEventDuration(date, date));
+        return Event.builder()
+                .name("")
+                .duration(new AllDayEventDuration(date, date))
+                .build();
     }
 
     public SortedSet<Event> getAllEvents() {
