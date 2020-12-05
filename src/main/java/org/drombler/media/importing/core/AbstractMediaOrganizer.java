@@ -5,6 +5,18 @@
  */
 package org.drombler.media.importing.core;
 
+import lombok.extern.slf4j.Slf4j;
+import org.drombler.event.core.Event;
+import org.drombler.identity.core.DromblerUserId;
+import org.drombler.identity.core.PrivateDromblerIdProvider;
+import org.drombler.identity.management.DromblerIdentityProviderManager;
+import org.drombler.media.core.MediaCategory;
+import org.drombler.media.core.MediaCategoryManager;
+import org.drombler.media.core.MediaStorage;
+import org.drombler.media.importing.EventManager;
+import org.drombler.media.management.MediaStorageManager;
+import org.softsmithy.lib.text.FormatException;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.DirectoryStream;
@@ -18,26 +30,13 @@ import java.util.logging.LogManager;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import org.drombler.event.core.Event;
-import org.drombler.identity.core.DromblerUserId;
-import org.drombler.identity.core.PrivateDromblerIdProvider;
-import org.drombler.identity.management.DromblerIdentityProviderManager;
-import org.drombler.media.core.MediaCategory;
-import org.drombler.media.core.MediaCategoryManager;
-import org.drombler.media.core.MediaStorage;
-import org.drombler.media.importing.EventManager;
-import org.drombler.media.management.MediaStorageManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.softsmithy.lib.text.FormatException;
 
 /**
  *
  * @author Florian
  */
+@Slf4j
 public abstract class AbstractMediaOrganizer {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractMediaOrganizer.class);
 
     private final EventManager eventManager;
     private final Path mediaRootDir;
@@ -130,7 +129,7 @@ public abstract class AbstractMediaOrganizer {
         try (final Stream<Path> paths = Files.list(mediaRootDir)) {
             paths.filter(path -> ((directories && Files.isDirectory(path)) || (!directories && !Files.isDirectory(path)))
                     && rawDatePattern.matcher(getPathName(path)).matches())
-                    .forEach(path -> organize(path));
+                    .forEach(this::organize);
         }
     }
 
@@ -142,7 +141,7 @@ public abstract class AbstractMediaOrganizer {
                         try {
                             moveFile(filePath, Files.size(filePath) < 1000000);
                         } catch (IOException | FormatException ex) {
-                            LOGGER.error("Error during moving file!", ex);
+                            log.error("Error during moving file!", ex);
                         }
                     });
                 }
@@ -153,7 +152,7 @@ public abstract class AbstractMediaOrganizer {
                 moveFile(path, false);
             }
         } catch (IOException | FormatException ex) {
-            LOGGER.error("Error during moving file!", ex);
+            log.error("Error during moving file!", ex);
         }
     }
 
@@ -163,7 +162,7 @@ public abstract class AbstractMediaOrganizer {
 //        System.out.println("dst: "+photoDir);
         Path videoDir = videoImportStorage.resolveMediaEventDirPath(event, defaulCopyrightOwner, uncategorized);
 //        System.out.println("dst: "+videoDir);
-        LOGGER.debug("src: " + filePath);
+        log.debug("src: " + filePath);
         try {
             if (photoImportStorage.isSupportedByFileExtension(filePath.getFileName().toString())) {
                 moveFile(filePath, photoDir);
@@ -171,7 +170,7 @@ public abstract class AbstractMediaOrganizer {
                 moveFile(filePath, videoDir);
             }
         } catch (IOException ex) {
-            LOGGER.error("Error during moving file!", ex);
+            log.error("Error during moving file!", ex);
         }
     }
 

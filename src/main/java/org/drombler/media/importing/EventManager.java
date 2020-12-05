@@ -55,7 +55,7 @@ public class EventManager {
             if (!events.get(date).contains(event)) {
                 events.get(date).add(event);
                 String eventDirName = getFormattedEventDirName(event);
-                LOG.debug(event.getName() + " - " + eventDirName);
+                LOG.debug(date + ": " + event.getName() + " - " + eventDirName);
             }
         }
     }
