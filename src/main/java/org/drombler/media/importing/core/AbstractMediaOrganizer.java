@@ -6,13 +6,12 @@
 package org.drombler.media.importing.core;
 
 import lombok.extern.slf4j.Slf4j;
+import org.drombler.event.core.AllDayEventDuration;
 import org.drombler.event.core.Event;
 import org.drombler.identity.core.DromblerUserId;
 import org.drombler.identity.core.PrivateDromblerIdProvider;
 import org.drombler.identity.management.DromblerIdentityProviderManager;
-import org.drombler.media.core.MediaCategory;
-import org.drombler.media.core.MediaCategoryManager;
-import org.drombler.media.core.MediaStorage;
+import org.drombler.media.core.*;
 import org.drombler.media.importing.EventManager;
 import org.drombler.media.management.MediaStorageManager;
 import org.softsmithy.lib.text.FormatException;
@@ -24,30 +23,32 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.Properties;
+import java.util.*;
 import java.util.logging.LogManager;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- *
  * @author Florian
  */
 @Slf4j
 public abstract class AbstractMediaOrganizer {
 
-    private final EventManager eventManager;
+    private final Map<MediaStorageType, EventManager> eventManagers = new EnumMap<>(MediaStorageType.class);
     private final Path mediaRootDir;
     private final Pattern rawDatePattern;
     private final boolean directories;
-    private final MediaStorage photoImportStorage;
-    private final MediaStorage videoImportStorage;
+    private final MediaStorage defaultPhotoImportStorage;
+    private final MediaStorage defaultVideoImportStorage;
+    private final List<MediaStorage> photoImportStorages = new ArrayList<>();
+    private final List<MediaStorage> videoImportStorages = new ArrayList<>();
     private final DromblerUserId defaulCopyrightOwner;
     private final DromblerIdentityProviderManager dromblerIdentityProviderManager = new DromblerIdentityProviderManager();
     private final MediaCategoryManager mediaCategoryManager = new MediaCategoryManager();
     private final MediaStorageManager mediaStorageManager = new MediaStorageManager(mediaCategoryManager);
+    private final FileMigrationOperation fileMigrationOperation;
 
     protected final static void initLogger() throws IOException {
         // TODO: extend and use JarFiles (SoftSmithy)
@@ -63,7 +64,7 @@ public abstract class AbstractMediaOrganizer {
         try (InputStream is = AbstractMediaOrganizer.class.getResourceAsStream("media-storages.json")) {
             mediaStorageManager.loadJsonConfig(is);
         }
-        this.eventManager = new EventManager(dromblerIdentityProviderManager);
+        Arrays.stream(MediaStorageType.values()).forEach(type -> eventManagers.put(type, new EventManager()));
 
         Properties mediaImportingProperties = new Properties();
         try (InputStream is = AbstractMediaOrganizer.class.getResourceAsStream("media-importing.properties")) {
@@ -80,15 +81,74 @@ public abstract class AbstractMediaOrganizer {
         if (videoMediaCategory == null) {
             throw new IllegalArgumentException("video media category not configured correctly!");
         }
-        this.photoImportStorage = new MediaStorage("photo-import", "importing photo", photoDirPath, Arrays.asList(photoMediaCategory));
-        this.videoImportStorage = new MediaStorage("video-import", "importing video", videoDirPath, Arrays.asList(videoMediaCategory));
+        this.defaultPhotoImportStorage = new MediaStorage("photo-import-owner-events", "importing owner event photos", photoDirPath, MediaStorageType.OWNER_EVENTS, false, Arrays.asList(photoMediaCategory));
+        photoImportStorages.add(defaultPhotoImportStorage);
+        photoImportStorages.add(new MediaStorage("photo-import-private-events", "importing private event photos", photoDirPath, MediaStorageType.PRIVATE_EVENTS, false, Arrays.asList(photoMediaCategory)));
+        photoImportStorages.add(new MediaStorage("photo-import-business-events", "importing business event photos", photoDirPath, MediaStorageType.BUSINESS_EVENTS, false, Arrays.asList(photoMediaCategory)));
+        photoImportStorages.add(new MediaStorage("photo-import-other-events", "importing other event photos", photoDirPath, MediaStorageType.OTHER_EVENTS, false, Arrays.asList(photoMediaCategory)));
+        photoImportStorages.add(new MediaStorage("photo-import-things", "importing photos of things", photoDirPath, MediaStorageType.THINGS, false, Arrays.asList(photoMediaCategory)));
+
+        this.defaultVideoImportStorage = new MediaStorage("video-import-owner-events", "importing owner event video", videoDirPath, MediaStorageType.OWNER_EVENTS, false, Arrays.asList(videoMediaCategory));
+        videoImportStorages.add(defaultVideoImportStorage);
 
         this.defaulCopyrightOwner = new DromblerUserId(mediaImportingProperties.getProperty("defaultCopyrightOwner"));
+        this.fileMigrationOperation = FileMigrationOperation.valueOf(mediaImportingProperties.getProperty("fileMigrationOperation"));
         dromblerIdentityProviderManager.registerDromblerIdentityProvider(PrivateDromblerIdProvider.getInstance());
 
-        mediaStorageManager.getMediaStorages().forEach(eventManager::updateEventMap);
-        eventManager.updateEventMap(photoImportStorage);
-        eventManager.updateEventMap(videoImportStorage);
+        mediaStorageManager.getMediaStorages().forEach(this::updateEventMap);
+
+        for (MediaStorage photoImportStorage : photoImportStorages) {
+            reorganizeImportStorage(photoImportStorage);
+        }
+        for (MediaStorage videoImportStorage : videoImportStorages) {
+            reorganizeImportStorage(videoImportStorage);
+        }
+    }
+
+
+    private void updateEventMap(MediaStorage mediaStorage) {
+        try {
+            eventManagers.get(mediaStorage.getType()).updateEventMap(mediaStorage.parseEvents());
+        } catch (IOException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+    }
+
+    private void reorganizeImportStorage(MediaStorage importStorage) throws IOException {
+        List<Event> events = importStorage.parseEvents();
+        List<Event> namedEvents = events.stream()
+                .filter(event -> !event.isUnnamed())
+                .collect(Collectors.toList());
+        List<Event> unnamedEvents = events.stream()
+                .filter(Event::isUnnamed)
+                .collect(Collectors.toList());
+        eventManagers.get(importStorage.getType()).updateEventMap(namedEvents);
+        unnamedEvents.stream()
+                .filter(event -> event.getDuration() instanceof AllDayEventDuration)
+                .forEach(unnamedEvent -> mergeOrRegisterEvent(unnamedEvent, importStorage));
+    }
+
+    private void mergeOrRegisterEvent(Event unnamedEvent, MediaStorage importStorage) {
+        try {
+            if (!mergeEventDirs(importStorage, unnamedEvent)) {
+                eventManagers.get(importStorage.getType()).updateEventMap(unnamedEvent);
+            }
+        } catch (FormatException | IOException | RuntimeException e) {
+            log.error("Could not merge event dirs for event: " + unnamedEvent, e);
+            eventManagers.get(importStorage.getType()).updateEventMap(unnamedEvent);
+        }
+    }
+
+    private boolean mergeEventDirs(MediaStorage importStorage, Event unnamedEvent) throws FormatException, IOException {
+        AllDayEventDuration duration = (AllDayEventDuration) unnamedEvent.getDuration();
+        for (LocalDate date : duration) {
+            if (eventManagers.get(importStorage.getType()).hasEvent(date)) {
+                Event namedEvent = eventManagers.get(importStorage.getType()).getFirstEvent(date);
+                importStorage.mergeEventDirs(unnamedEvent, namedEvent);
+                return true;
+            }
+        }
+        return false;
     }
 
     private static String getPathName(Path filePath) {
@@ -107,19 +167,17 @@ public abstract class AbstractMediaOrganizer {
         }
     }
 
-    private static void moveFile(Path filePath, Path targetDirPath) throws IOException {
-        if (!Files.exists(targetDirPath)) {
-            Files.createDirectories(targetDirPath);
-        }
-        // TODO: check the events dirs before enabling the next line. They were not correct the last time
-        Files.move(filePath, targetDirPath.resolve(filePath.getFileName()));
+    private Path importFile(Path filePath, MediaStorage mediaStorage, boolean uncategorized) throws IOException, FormatException {
+        Path path = directories ? filePath.getParent() : filePath;
+        Event event = getFirstEvent(path, eventManagers.get(mediaStorage.getType()));
+        return mediaStorage.importFile(filePath, event, defaulCopyrightOwner, uncategorized, fileMigrationOperation);
     }
 
-    private Event getFirstEvent(Path path) {
+    private Event getFirstEvent(Path path, EventManager eventManager) {
         final Matcher matcher = rawDatePattern.matcher(getPathName(path));
         if (matcher.matches()) {
             LocalDate date = getDate(matcher);
-            return eventManager.getFirstEvent(date);
+            return eventManager.getAndUpdateFirstEvent(date);
         } else {
             throw new IllegalStateException("Should be matching here: " + getPathName(path));
         }
@@ -139,7 +197,7 @@ public abstract class AbstractMediaOrganizer {
                 try (final Stream<Path> paths = Files.list(path)) {
                     paths.forEach(filePath -> {
                         try {
-                            moveFile(filePath, Files.size(filePath) < 1000000);
+                            importFile(filePath, Files.size(filePath) < 1000000);
                         } catch (IOException | FormatException ex) {
                             log.error("Error during moving file!", ex);
                         }
@@ -149,25 +207,20 @@ public abstract class AbstractMediaOrganizer {
                     deleteEmptySrcDir(path);
                 }
             } else {
-                moveFile(path, false);
+                importFile(path, false);
             }
         } catch (IOException | FormatException ex) {
             log.error("Error during moving file!", ex);
         }
     }
 
-    private void moveFile(Path filePath, boolean uncategorized) throws IOException, FormatException {
-        Event event = getFirstEvent(directories ? filePath.getParent() : filePath);
-        Path photoDir = photoImportStorage.resolveMediaEventDirPath(event, defaulCopyrightOwner, uncategorized);
-//        System.out.println("dst: "+photoDir);
-        Path videoDir = videoImportStorage.resolveMediaEventDirPath(event, defaulCopyrightOwner, uncategorized);
-//        System.out.println("dst: "+videoDir);
+    private void importFile(Path filePath, boolean uncategorized) throws IOException, FormatException {
         log.debug("src: " + filePath);
         try {
-            if (photoImportStorage.isSupportedByFileExtension(filePath.getFileName().toString())) {
-                moveFile(filePath, photoDir);
+            if (defaultPhotoImportStorage.isSupportedByFileExtension(filePath.getFileName().toString())) {
+                importFile(filePath, defaultPhotoImportStorage, uncategorized);
             } else {
-                moveFile(filePath, videoDir);
+                importFile(filePath, defaultVideoImportStorage, uncategorized);
             }
         } catch (IOException ex) {
             log.error("Error during moving file!", ex);
