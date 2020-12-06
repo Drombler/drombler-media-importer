@@ -98,10 +98,20 @@ public abstract class AbstractMediaOrganizer {
         mediaStorageManager.getMediaStorages().forEach(this::updateEventMap);
 
         for (MediaStorage photoImportStorage : photoImportStorages) {
-            reorganizeImportStorage(photoImportStorage);
+            importNamedEventCandidates(photoImportStorage);
         }
         for (MediaStorage videoImportStorage : videoImportStorages) {
-            reorganizeImportStorage(videoImportStorage);
+            importNamedEventCandidates(videoImportStorage);
+        }
+
+        reorganizeImportStorage(defaultPhotoImportStorage);
+        reorganizeImportStorage(defaultVideoImportStorage);
+
+        for (MediaStorage photoImportStorage : photoImportStorages) {
+            importUnamedEventCandidates(photoImportStorage);
+        }
+        for (MediaStorage videoImportStorage : videoImportStorages) {
+            importUnamedEventCandidates(videoImportStorage);
         }
     }
 
@@ -114,28 +124,39 @@ public abstract class AbstractMediaOrganizer {
         }
     }
 
-    private void reorganizeImportStorage(MediaStorage importStorage) throws IOException {
+    private void importNamedEventCandidates(MediaStorage importStorage) throws IOException {
         List<Event> events = importStorage.parseEvents();
         List<Event> namedEvents = events.stream()
                 .filter(event -> !event.isUnnamed())
                 .collect(Collectors.toList());
+        eventManagers.get(importStorage.getType()).updateEventMap(namedEvents);
+    }
+
+    private void importUnamedEventCandidates(MediaStorage importStorage) throws IOException {
+        List<Event> events = importStorage.parseEvents();
+        List<Event> namedEvents = events.stream()
+                .filter(event -> !event.isUnnamed())
+                .collect(Collectors.toList());
+        eventManagers.get(importStorage.getType()).updateEventMap(namedEvents);
+    }
+
+    private void reorganizeImportStorage(MediaStorage importStorage) throws IOException {
+        List<Event> events = importStorage.parseEvents();
         List<Event> unnamedEvents = events.stream()
                 .filter(Event::isUnnamed)
                 .collect(Collectors.toList());
-        eventManagers.get(importStorage.getType()).updateEventMap(namedEvents);
         unnamedEvents.stream()
                 .filter(event -> event.getDuration() instanceof AllDayEventDuration)
-                .forEach(unnamedEvent -> mergeOrRegisterEvent(unnamedEvent, importStorage));
+                .forEach(unnamedEvent -> mergeUnnamedEvent(unnamedEvent, importStorage));
     }
 
-    private void mergeOrRegisterEvent(Event unnamedEvent, MediaStorage importStorage) {
+    private void mergeUnnamedEvent(Event unnamedEvent, MediaStorage importStorage) {
         try {
             if (!mergeEventDirs(importStorage, unnamedEvent)) {
                 eventManagers.get(importStorage.getType()).updateEventMap(unnamedEvent);
             }
         } catch (FormatException | IOException | RuntimeException e) {
             log.error("Could not merge event dirs for event: " + unnamedEvent, e);
-            eventManagers.get(importStorage.getType()).updateEventMap(unnamedEvent);
         }
     }
 
@@ -143,9 +164,16 @@ public abstract class AbstractMediaOrganizer {
         AllDayEventDuration duration = (AllDayEventDuration) unnamedEvent.getDuration();
         for (LocalDate date : duration) {
             if (eventManagers.get(importStorage.getType()).hasEvent(date)) {
-                Event namedEvent = eventManagers.get(importStorage.getType()).getFirstEvent(date);
-                importStorage.mergeEventDirs(unnamedEvent, namedEvent);
-                return true;
+                Optional<Event> namedEvent = eventManagers.get(importStorage.getType())
+                        .getEvents(date).stream()
+                        .filter(event -> !event.isUnnamed())
+                        .findFirst();
+                if (namedEvent.isPresent()) {
+                    importStorage.mergeEventDirs(unnamedEvent, namedEvent.get());
+                    return true;
+                } else {
+                    return false;
+                }
             }
         }
         return false;

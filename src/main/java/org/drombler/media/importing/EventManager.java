@@ -68,6 +68,10 @@ public class EventManager {
         return events.get(date).first();
     }
 
+    public SortedSet<Event> getEvents(LocalDate date) {
+        return events.get(date);
+    }
+
     private Event createEvent(LocalDate date) {
         return Event.builder()
                 .name("")
