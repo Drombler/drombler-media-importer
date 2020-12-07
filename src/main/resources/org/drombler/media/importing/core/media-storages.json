@@ -4,7 +4,7 @@
             "id": "albums-shared",
             "name": "Alben",
             "mediaRootDir": "\\\\diskstation\\photo\\Alben",
-            "type": "OWNER_EVENTS",
+            "type": "SHARED_EVENTS",
             "legacyEventDirNames": false,
             "supportedMediaCategoryIds": [
                 "photo"
@@ -35,7 +35,7 @@
             "id": "privatvideo",
             "name": "Prviat Video",
             "mediaRootDir": "\\\\diskstation\\video\\privatvideo",
-            "type": "OWNER_EVENTS",
+            "type": "SHARED_EVENTS",
             "legacyEventDirNames": false,
             "supportedMediaCategoryIds": [
                 "video"

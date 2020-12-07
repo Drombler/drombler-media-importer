@@ -55,7 +55,7 @@ public class EventManager {
 
     public Event getAndUpdateFirstEvent(LocalDate date) {
         if (!hasEvent(date)) {
-            updateEventMap(createEvent(date));
+            updateEventMap(createUnnamedEvent(date));
         }
         return getFirstEvent(date);
     }
@@ -72,7 +72,7 @@ public class EventManager {
         return events.get(date);
     }
 
-    private Event createEvent(LocalDate date) {
+    private Event createUnnamedEvent(LocalDate date) {
         return Event.builder()
                 .name("")
                 .duration(new AllDayEventDuration(date, date))
