@@ -1,70 +1,46 @@
 package org.drombler.media.importing;
 
-import java.io.IOException;
-import java.time.LocalDate;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
+import org.drombler.event.core.AllDayEventDuration;
 import org.drombler.event.core.Event;
 import org.drombler.event.core.EventDuration;
-import org.drombler.event.core.AllDayEventDuration;
 import org.drombler.event.core.format.EventDirNameFormatter;
-import org.drombler.identity.management.DromblerIdentityProviderManager;
-import org.drombler.media.core.MediaSource;
-import org.drombler.media.core.MediaStorage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.softsmithy.lib.text.FormatException;
 
+import java.time.LocalDate;
+import java.util.*;
+import java.util.stream.Collectors;
+
 /**
- *
  * @author Florian
  */
+@Slf4j
 public class EventManager {
-
-    private static final Logger LOG = LoggerFactory.getLogger(EventManager.class);
 
     private final Map<LocalDate, SortedSet<Event>> events = new HashMap<>();
     private final Comparator<EventDuration> eventDurationComparator = new ImportEventDurationComparator();
     private final Comparator<Event> eventComparator = Comparator.comparing(Event::getDuration, eventDurationComparator)
             .thenComparing(Event::getName);
-    private final DromblerIdentityProviderManager dromblerIdentityProviderManager;
 
-    public EventManager(DromblerIdentityProviderManager dromblerIdentityProviderManager) throws IOException {
-        this.dromblerIdentityProviderManager = dromblerIdentityProviderManager;
+
+    public void updateEventMap(List<Event> events) {
+        events.stream()
+                .filter(event -> event.getDuration() instanceof AllDayEventDuration)
+                .forEach(this::updateEventMap);
     }
 
-    public void updateEventMap(MediaStorage mediaStorage) {
-        try {
-            List<MediaSource> mediaSources = mediaStorage.readMediaSources(dromblerIdentityProviderManager);
-            mediaSources.stream()
-                    .map(MediaSource::getEvent)
-                    .filter(Objects::nonNull)
-                    .filter(event -> event.getDuration() instanceof AllDayEventDuration)
-                    .forEach(this::updateEventMap);
-        } catch (IOException ex) {
-            LOG.error(ex.getMessage(), ex);
-        }
-    }
-
-    private void updateEventMap(Event event) {
+    public void updateEventMap(Event event) {
         final AllDayEventDuration duration = (AllDayEventDuration) event.getDuration();
-        for (LocalDate date = duration.getStartDateInclusive(); date.isBefore(duration.getEndDateInclusive()) || date.equals(duration.getEndDateInclusive()); date = date.plusDays(1)) {
+        duration.iterator().forEachRemaining(date -> {
             if (!events.containsKey(date)) {
                 events.put(date, new TreeSet<>(eventComparator));
             }
             if (!events.get(date).contains(event)) {
                 events.get(date).add(event);
                 String eventDirName = getFormattedEventDirName(event);
-                LOG.debug(event.getName() + " - " + eventDirName);
+                log.debug(date + ": " + event.getName() + " - " + eventDirName);
             }
-        }
+        });
     }
 
     private String getFormattedEventDirName(Event event) {
@@ -72,18 +48,35 @@ public class EventManager {
             EventDirNameFormatter formatter = new EventDirNameFormatter();
             return formatter.format(event);
         } catch (FormatException ex) {
-            LOG.error(ex.getMessage(), ex);
+            log.error(ex.getMessage(), ex);
             return null;
         }
     }
 
+    public Event getAndUpdateFirstEvent(LocalDate date) {
+        if (!hasEvent(date)) {
+            updateEventMap(createEvent(date));
+        }
+        return getFirstEvent(date);
+    }
+
+    public boolean hasEvent(LocalDate date) {
+        return events.containsKey(date) && !events.get(date).isEmpty();
+    }
+
     public Event getFirstEvent(LocalDate date) {
-        updateEventMap(createEvent(date));
         return events.get(date).first();
     }
 
+    public SortedSet<Event> getEvents(LocalDate date) {
+        return events.get(date);
+    }
+
     private Event createEvent(LocalDate date) {
-        return new Event(null, "", new AllDayEventDuration(date, date));
+        return Event.builder()
+                .name("")
+                .duration(new AllDayEventDuration(date, date))
+                .build();
     }
 
     public SortedSet<Event> getAllEvents() {
