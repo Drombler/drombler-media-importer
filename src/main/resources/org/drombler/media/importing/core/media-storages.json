@@ -1,45 +1,68 @@
 {
-    "mediaStorageConfigurations": [
-        {
-            "id": "albums-shared",
-            "name": "Alben",
-            "mediaRootDir": "\\\\diskstation\\photo\\Alben",
-            "type": "OWNER_EVENTS",
-            "legacyEventDirNames": false,
-            "supportedMediaCategoryIds": [
-                "photo"
-            ]
-        },
-        {
-            "id": "albums-others",
-            "name": "Alben (andere)",
-            "mediaRootDir": "\\\\diskstation\\photo\\Alben-others",
-            "type": "OTHER_EVENTS",
-            "legacyEventDirNames": false,
-            "supportedMediaCategoryIds": [
-                "photo"
-            ]
-        },
-        {
-            "id": "albums-private",
-            "name": "Alben (privat)",
-            "mediaRootDir": "\\\\diskstation\\home\\photo\\Alben",
-            "type": "PRIVATE_EVENTS",
-            "legacyEventDirNames": true,
-            "supportedMediaCategoryIds": [
-                "photo",
-                "image"
-            ]
-        },
-        {
-            "id": "privatvideo",
-            "name": "Prviat Video",
-            "mediaRootDir": "\\\\diskstation\\video\\privatvideo",
-            "type": "OWNER_EVENTS",
-            "legacyEventDirNames": false,
-            "supportedMediaCategoryIds": [
-                "video"
-            ]
-        }
-    ]
+  "mediaStorageConfigurations": [
+    {
+      "id": null,
+      "name": "Alben",
+      "mediaRootDir": "\\\\diskstation\\photo\\Alben",
+      "supportedContentTypes": [
+        "SHARED_EVENTS"
+      ],
+      "legacyEventDirNames": false,
+      "supportedMediaCategoryTypes": [
+        "PHOTO"
+      ],
+      "owners": [
+        "puce",
+        "pati"
+      ]
+    },
+    {
+      "id": null,
+      "name": "Alben (andere)",
+      "mediaRootDir": "\\\\diskstation\\photo\\Alben-others",
+      "supportedContentTypes": [
+        "OTHER_EVENTS"
+      ],
+      "legacyEventDirNames": false,
+      "supportedMediaCategoryIds": [
+        "PHOTO"
+      ],
+      "owners": [
+        "puce",
+        "pati"
+      ]
+    },
+    {
+      "id": null,
+      "name": "Alben (privat)",
+      "mediaRootDir": "\\\\diskstation\\home\\photo\\Alben",
+      "supportedContentTypes": [
+        "PRIVATE_EVENTS"
+      ],
+      "legacyEventDirNames": true,
+      "supportedMediaCategoryIds": [
+        "PHOTO",
+        "IMAGE"
+      ],
+      "owners": [
+        "puce"
+      ]
+    },
+    {
+      "id": null,
+      "name": "Prviat Video",
+      "mediaRootDir": "\\\\diskstation\\video\\privatvideo",
+      "supportedContentTypes": [
+        "SHARED_EVENTS"
+      ],
+      "legacyEventDirNames": false,
+      "supportedMediaCategoryIds": [
+        "VIDEO"
+      ],
+      "owners": [
+        "puce",
+        "pati"
+      ]
+    }
+  ]
 }
